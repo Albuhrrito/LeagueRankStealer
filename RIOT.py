@@ -1,36 +1,45 @@
 import requests
 import os
 import time
-import dearpygui.dearpygui as dpg
 
+from dotenv import load_dotenv
+#import dearpygui.dearpygui as dpg
+#VARIABLE DECLARATIONS
+#//////////
+load_dotenv()
 SUMMONER_NAME = "zakiVAL"
 region = "americas"
-api_key = "RGAPI-e9349508-bc67-4202-8e5c-9649233e2c64"
+api_key = os.getenv("API_KEY")
+if api_key is None:
+    print("API key not found. Please set the API_KEY environment variable.")
+    exit()
 puuid = "PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g"
 api_url = "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/zakiVAL"
 api_url = api_url + '?api_key=' + api_key
 resp = requests.get(api_url)
 player_info = resp.json()
 player_account_id = player_info['accountId']
-api_url = "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g/ids?start=0&count=10"
+api_url = "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g/ids?start=0&count=20"
 api_url = api_url + "&api_key=" + api_key
 resp = requests.get(api_url)
 matches = resp.json()
 match_id = matches[0]
-print(match_id)
+#print(match_id)
 api_url = "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g/ids?type=ranked&start=0&count=1"
 api_url = "https://americas.api.riotgames.com/lol/match/v5/matches/" + match_id
 api_url = api_url + "?api_key=" + api_key
 resp = requests.get(api_url)
 match_data = resp.json()
-print(match_data)
+#print(match_data)
 match_data.keys()
 part_index = match_data['metadata']['participants'].index(puuid)
 puuid = "PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g"
-print(match_data['info']['participants'][part_index]['kills'], match_data['info']['participants'][part_index]['deaths'], match_data['info']['participants'][part_index]['assists'])
+#print(match_data['info']['participants'][part_index]['kills'], match_data['info']['participants'][part_index]['deaths'], match_data['info']['participants'][part_index]['assists'])
 kdaRatio = (match_data['info']['participants'][part_index]['kills'] + match_data['info']['participants'][part_index]['assists']) / match_data['info']['participants'][part_index]['deaths']
 kdaRatioText = "KDA RATIO = " + str(kdaRatio)
+#/////////////////
 #GUI CODE
+#/////////////////
 '''
 dpg.create_context()
 dpg.create_viewport(title='KDA', width=600, height=300)
@@ -46,7 +55,9 @@ dpg.show_viewport()
 dpg.start_dearpygui()
 dpg.destroy_context()
 '''
+#/////////////////
 #FUNCTIONS
+#/////////////////
 def getMatchData(region, match_data, api_key):
     api_url = ("https://" + 
                region + 
@@ -78,7 +89,23 @@ def get_summoner_account_id(summoner_name):
     data = response.json()
     return data['accountId']
 
+def calculate_win_rate(count):
+    win_rate = "%" + str((count/20) * 100)
+    print("You have a " + str(win_rate) + " win rate.")
+    if(count <= 5):
+        print("You are DOGSHIT")
+
 account_id = get_summoner_account_id(SUMMONER_NAME)
+count = 0
+
+def get_match_history(puuid):
+    url = f'https://{region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count=10&api_key={api_key}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+    
 game_no = 1
 count = 0
 for match_id in matches:
@@ -93,12 +120,14 @@ for match_id in matches:
     if(didWin(puuid, match_data) == True):
         count += 1
     game_no += 1
-win_rate = "%" + str((count/20) * 100)
-print("You have a " + str(win_rate) + " win rate.")
-if(count <= 5):
-    print("You are DOGSHIT")
+        
 
-"""
+get_match_history(puuid)
+calculate_win_rate(count)
+
+
+#////////////////
+'''
 def get_match_history(account_id, count=20):
     url = "https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/{account_id}?endIndex={count}&api_key={api_key}"
     response = requests.get(url)
@@ -132,4 +161,4 @@ didWin(puuid, match_data)
 
 getMatchData(region, match_data, api_key)
 
-"""
+'''
