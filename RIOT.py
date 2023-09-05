@@ -1,164 +1,85 @@
-import requests
+import tkinter as tk
+from tkinter import ttk
+from functions import get_summoner_puuid, get_matches, get_match_data, part_index, did_win, win_rate, fetch_data
 import os
-import time
-
 from dotenv import load_dotenv
-#import dearpygui.dearpygui as dpg
-#VARIABLE DECLARATIONS
-#//////////
+import requests
+
 load_dotenv()
-SUMMONER_NAME = "zakiVAL"
+
+#GUI CODE##############
+root = tk.Tk()
+root.title("Riot API GUI")
+
+username_label = ttk.Label(root, text="Enter username:")
+username_label.pack(pady=10)
+
+username_entry = ttk.Entry(root, width=30)
+username_entry.pack(pady=5)
+
+fetch_button = ttk.Button(root, text="Fetch Data", command=did_win)
+fetch_button.pack(pady=10)
+
+output_label = ttk.Label(root, text="")
+output_label.pack(pady=10)
+
+root.mainloop()
+
+SUMMONER_NAME = input("Enter username: ")
 region = "americas"
 api_key = os.getenv("API_KEY")
+
 if api_key is None:
     print("API key not found. Please set the API_KEY environment variable.")
     exit()
-puuid = "PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g"
-api_url = "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/zakiVAL"
+
+api_url = f"https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{SUMMONER_NAME}"
 api_url = api_url + '?api_key=' + api_key
 resp = requests.get(api_url)
-player_info = resp.json()
-player_account_id = player_info['accountId']
-api_url = "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g/ids?start=0&count=20"
-api_url = api_url + "&api_key=" + api_key
-resp = requests.get(api_url)
-matches = resp.json()
-match_id = matches[0]
-#print(match_id)
-api_url = "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g/ids?type=ranked&start=0&count=1"
-api_url = "https://americas.api.riotgames.com/lol/match/v5/matches/" + match_id
-api_url = api_url + "?api_key=" + api_key
-resp = requests.get(api_url)
-match_data = resp.json()
-#print(match_data)
-match_data.keys()
-part_index = match_data['metadata']['participants'].index(puuid)
-puuid = "PnnfqQB40RSFSkzpl7Cv53eadUTwsMMK-RYeQXztDNTPExwzkgCmrdJ7znM2QqD6tIdmp0a0p47p2g"
-#print(match_data['info']['participants'][part_index]['kills'], match_data['info']['participants'][part_index]['deaths'], match_data['info']['participants'][part_index]['assists'])
-kdaRatio = (match_data['info']['participants'][part_index]['kills'] + match_data['info']['participants'][part_index]['assists']) / match_data['info']['participants'][part_index]['deaths']
-kdaRatioText = "KDA RATIO = " + str(kdaRatio)
-#/////////////////
-#GUI CODE
-#/////////////////
-'''
-dpg.create_context()
-dpg.create_viewport(title='KDA', width=600, height=300)
 
-with dpg.window(label="KDA"):
-    dpg.add_text(match_data['info']['participants'][part_index]['kills'])
-    dpg.add_text(match_data['info']['participants'][part_index]['deaths'])
-    dpg.add_text(match_data['info']['participants'][part_index]['assists'])
-    dpg.add_text(kdaRatioText)
-
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
-'''
-#/////////////////
-#FUNCTIONS
-#/////////////////
-def getMatchData(region, match_data, api_key):
-    api_url = ("https://" + 
-               region + 
-               ".api.riotgames.com/lol/match/v5/matches/" + 
-               match_id + "?api_key=" + 
-               api_key)
-    while True:
-        resp = requests.get(api_url)
-        if resp.status_code == 429:
-            print("sleeping")
-            time.sleep(10)
-            continue
-        data = resp.json()
-        return data
-match_data = getMatchData(region, match_id, api_key)
-getMatchData(region, match_data, api_key)
-
-print(part_index)
-def partIndex(match_data):
-    return match_data['metadata']['participants'].index(puuid)
-
-def didWin(puuid, match_data):
-    match_data = getMatchData(region, match_id, api_key)
-    return match_data['info']['participants'][part_index]['win']
-
-def get_summoner_account_id(summoner_name):
-    url = f"https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{summoner_name}?api_key={api_key}"
-    response = requests.get(url)
-    data = response.json()
-    return data['accountId']
-
-def calculate_win_rate(count):
-    win_rate = "%" + str((count/20) * 100)
-    print("You have a " + str(win_rate) + " win rate.")
-    if(count <= 5):
-        print("You are DOGSHIT")
-
-account_id = get_summoner_account_id(SUMMONER_NAME)
-count = 0
-
-def get_match_history(puuid):
-    url = f'https://{region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count=10&api_key={api_key}'
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return None
+if resp.status_code != 200:
+    print(f"Failed to get player info. Status Code: {resp.status_code}")
+    exit()
     
+player_info = resp.json()
+player_account_id = player_info.get('accountId', 'N/A')
+puuid = resp.json().get('puuid', 'N/A')
+print("PUUID for " + str(SUMMONER_NAME) + ": " + str(puuid))
+
+matches = get_matches(api_key, region, puuid)
+match_id = matches[0]
+
+match_data = get_match_data(api_key, region, match_id)
+if 'metadata' not in match_data:
+    print("metadata not found in match_data")
+    exit()
+
+part_idx = part_index(match_data, puuid)
+win_status = did_win(match_data, part_idx)
+
+matches = get_matches(api_key, region, puuid)
+
 game_no = 1
-count = 0
+win_count = 0
+
 for match_id in matches:
-    match_data = getMatchData(region, match_id, api_key)
-    part_index = partIndex(match_data)
+    match_data = get_match_data(api_key, region, match_id)
+    part_idx = part_index(match_data, puuid)
+    win_status = did_win(match_data, part_idx)
     print("game number = " + str(game_no))
-    print("part index = " + str(part_index))
-    print("KDA = " + str((match_data['info']['participants'][part_index]['kills'], match_data['info']['participants'][part_index]['deaths'], match_data['info']['participants'][part_index]['assists'])))
-    print(didWin(puuid, match_data))
+    print(f"Part Index: {part_idx}")
+    print("KDA = " + str((match_data['info']['participants'][part_idx]['kills'], 
+                          match_data['info']['participants'][part_idx]['deaths'], 
+                          match_data['info']['participants'][part_idx]['assists'])))
+    print(f"Did Win: {win_status}")
     print(match_id)
     print("")
-    if(didWin(puuid, match_data) == True):
-        count += 1
+    if win_status:
+        win_count += 1
     game_no += 1
-        
-
-get_match_history(puuid)
-calculate_win_rate(count)
-
-
-#////////////////
-'''
-def get_match_history(account_id, count=20):
-    url = "https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/{account_id}?endIndex={count}&api_key={api_key}"
-    response = requests.get(url)
-    data = response.json()
-    return data['match_id']
-get_match_history(account_id, count=20)
+print("Win Count: " + str(win_count))
+print("Win Rate: " + str(win_rate(game_no, win_count)))
+if win_count <= 7:
+    print("YOU SUCK")
 
 
-def get_matches(region, puuid, count, api_key):
-    api_url=(
-        "https://" +
-        region +
-        ".api.riotgames.com/lol/match/v5/matches/by-puuid/" +
-        puuid +
-        "/ids" +
-        "?type=ranked&" +
-        "start=0&" +
-        "count=" + 
-        str(count) +
-        "&api_key=" +
-        api_key
-    )
-    resp = requests.get(api_url)
-    return resp.json()
-matches = get_matches(region, puuid, 110, api_key)
-
-
-match_data['info']['participants'][0]['win']
-player_info['puuid']
-didWin(puuid, match_data)
-
-getMatchData(region, match_data, api_key)
-
-'''
