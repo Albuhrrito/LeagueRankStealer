@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Match History</title>
+</head>
+<body>
+    <h1>League of Legends Match History</h1>
+    <label for="nameInput">Name:</label>
+    <input id="nameInput" type="text" placeholder="Enter name">
+    <label for="tagInput">Tag:</label>
+    <input id="tagInput" type="text" placeholder="Enter tag">
+    <button id="loadHistory">Load Match History</button>
+    <pre id="matchHistory"></pre>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        document.getElementById('loadHistory').onclick = function() {
+            var name = document.getElementById('nameInput').value;
+            var tag = document.getElementById('tagInput').value;
+            
+            $.ajax({
+                url: '/fetch_player_info', // Ensure this endpoint matches your backend route
+                type: 'GET',
+                data: {
+                    name: name,
+                    tag: tag
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Assuming response.data is a string or HTML that can be directly set
+                        document.getElementById('matchHistory').textContent = JSON.stringify(response.data, null, 2);
+                    } else {
+                        alert('Failed to fetch data: ' + response.error);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error fetching match history: ' + xhr.responseText);
+                }
+            });
+        };
+        
+        
+    </script>
+</body>
+</html>
