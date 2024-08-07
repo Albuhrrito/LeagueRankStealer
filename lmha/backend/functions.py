@@ -30,7 +30,7 @@ def get_summoner_puuid(api_key, username, region):
     else:
         return f"An error occurred: {response.status_code}"
 
-def get_matches(api_key, region, puuid, count=20):
+def get_matches(api_key, region, puuid, count=21):
     url = f"https://{region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count={count}"
     headers = {"X-Riot-Token": api_key}
     
